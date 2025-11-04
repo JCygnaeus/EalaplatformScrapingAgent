@@ -226,7 +226,7 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=7):
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15"
     ]
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])
         context = await browser.new_context(user_agent=choice(USER_AGENTS))
         page = await context.new_page()
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
