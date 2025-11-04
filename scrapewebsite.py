@@ -17,7 +17,7 @@ import aiohttp
 from decimal import Decimal
 
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 
 DB_EALA_USER = os.getenv('DB_EALA_USER')
