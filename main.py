@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "✅ Flask + Playwright is running!"
+    return "✅ Flask + Playwright isrunning!"
 
 @lru_cache(maxsize=1)
 def get_country_name_map():
