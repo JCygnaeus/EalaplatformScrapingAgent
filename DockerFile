@@ -1,59 +1,18 @@
-# Use an official Python image
-FROM python:3.10-slim
+# Playwright image with all dependencies preinstalled
+FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
 
-# Prevent Python from writing .pyc files and enable unbuffered logs
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Install all system dependencies required by Playwright Chromium
-RUN apt-get update && apt-get install -y \
-    wget gnupg ca-certificates \
-    libglib2.0-0 \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libpangocairo-1.0-0 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libx11-xcb1 \
-    libxext6 \
-    libx11-6 \
-    libxrender1 \
-    libdbus-1-3 \
-    libexpat1 \
-    libsmime3 \
-    libnssutil3 \
-    libgobject-2.0-0 \
-    libatspi2.0-0 \
-    libxcb1 \
-    libxkbcommon0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set work directory
+# Set working directory
 WORKDIR /app
 
 # Copy dependencies and install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and browsers
-RUN playwright install chromium
-
-# Copy the rest of your application code
+# Copy application code
 COPY . .
 
-# Expose the port that Railway uses
+# Expose Railway port
 EXPOSE 8080
 
-# Run the app with Gunicorn
+# Start Flask app with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
