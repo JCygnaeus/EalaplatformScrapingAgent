@@ -16,8 +16,9 @@ from random import choice
 import aiohttp
 from decimal import Decimal
 
-client = OpenAI()
+
 openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=openai_api_key)
 
 DB_EALA_USER = os.getenv('DB_EALA_USER')
 DB_EALA_PASSWORD = os.getenv('DB_EALA_PASSWORD')
