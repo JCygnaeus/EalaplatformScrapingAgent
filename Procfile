@@ -1,2 +1,1 @@
-release: playwright install chromium
-web: gunicorn main:app
+web: bash -c "playwright install chromium && gunicorn main:app"
