@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 import asyncio
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
+from scrapewebsite import scrape_focus_fields,update_database, Countries, session as Riiyosession
+from functools import wraps,lru_cache
+from threading import Thread
 
 app = Flask(__name__)
 
@@ -9,26 +12,39 @@ app = Flask(__name__)
 def home():
     return "✅ Flask + Playwright is running!"
 
-@app.route("/scrape", methods=["GET"])
-def scrape_route():
-    url = request.args.get("url")
-    if not url:
-        return jsonify({"error": "Missing ?url parameter"}), 400
+@lru_cache(maxsize=1)
+def get_country_name_map():
+    all_countries = Riiyosession.query(Countries).all()
+    return {c.country_name_english: c.id for c in all_countries}
 
-    result = asyncio.run(scrape_page(url))
-    return jsonify(result)
+@app.route("/scrapingriiyo")
+def scrapingriiyo_main():
+    website = request.args.get("website")
+    if not website or not website.startswith("http"):
+        return jsonify({"error": "Invalid or missing website URL"}), 400
+    country_name_map = get_country_name_map()
+    results = asyncio.run(scrape_focus_fields(website, country_name_map, max_pages=7))
+    if not results["structured_data"]:
+        return jsonify({
+            "error": "Failed to extract structured data",
+            "details": results.get("errors", []),
+            "source_url": results.get("source_url")
+        }), 500
 
-async def scrape_page(url):
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
-        page = await browser.new_page()
-        await page.goto(url, timeout=20000)
-        html = await page.content()
-        await browser.close()
+    return jsonify(results)
 
-    soup = BeautifulSoup(html, "html.parser")
-    title = soup.title.string if soup.title else "No title found"
-    return {"url": url, "title": title}
+@app.route('/scrapingriiyo2')
+def scrapingriiyo2():
+    website = request.args.get("website")
+    retailer_id = request.args.get("retailer_id")
+
+    def run_scrape():
+        asyncio.run(update_database(website, retailer_id))
+
+    Thread(target=run_scrape).start()
+    return jsonify({"status": "started"})  # returns fast
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
