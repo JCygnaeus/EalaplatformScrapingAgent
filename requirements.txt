@@ -1,6 +1,6 @@
 requests>=2.31
 beautifulsoup4>=4.12
-playwright>=1.44
+playwright>=1.55
 openai>=1.0.0
 rapidfuzz>=2.16
 SQLAlchemy>=2.0

@@ -1,18 +1,13 @@
-# Playwright image with all dependencies preinstalled
-FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
+# Use matching Playwright image
+FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
 
-# Set working directory
 WORKDIR /app
 
-# Copy dependencies and install Python packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
 COPY . .
 
-# Expose Railway port
 EXPOSE 8080
 
-# Start Flask app with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
