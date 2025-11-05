@@ -212,7 +212,7 @@ async def fetch_rendered_html(url, page, retries=2):
             await asyncio.sleep(2)
 
 
-async def scrape_focus_fields(start_url,country_name_map, max_pages=7):
+async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
     visited = set()
     to_visit = [start_url]
     parsed_domain = urlparse(start_url).netloc.replace("www.", "")
@@ -226,7 +226,15 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=7):
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15"
     ]
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-setuid-sandbox"])
+        browser = await p.chromium.launch(headless=True,
+            args=["--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",  # Prevents crashes in low-memory environments
+            "--disable-gpu",
+            "--single-process",
+            "--no-zygote"
+            ]
+        )
         context = await browser.new_context(user_agent=choice(USER_AGENTS))
         page = await context.new_page()
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
