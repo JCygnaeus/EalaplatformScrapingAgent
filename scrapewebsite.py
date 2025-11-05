@@ -15,7 +15,7 @@ import os
 from random import choice
 import aiohttp
 from decimal import Decimal
-from playwright_stealth import stealth_async
+from playwright_stealth import stealth_sync
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
@@ -272,7 +272,7 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
             locale="en-US",
         )
         page = await context.new_page()
-        await stealth_async(page)
+        await stealth_sync(page)
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
             url = to_visit.pop(0)
             if url in visited or parsed_domain not in url:
