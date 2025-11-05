@@ -244,7 +244,7 @@ async def fetch_rendered_html(url, page, retries=2):
             await asyncio.sleep(2)
 
 
-async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
+async def scrape_focus_fields(start_url,country_name_map, max_pages=1):
     visited = set()
     to_visit = [start_url]
     parsed_domain = urlparse(start_url).netloc.replace("www.", "")
