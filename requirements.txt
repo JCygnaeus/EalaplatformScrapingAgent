@@ -1,6 +1,6 @@
 requests>=2.31
 beautifulsoup4>=4.12
-playwright>=1.55
+playwright>=1.55.0
 openai>=1.0.0
 rapidfuzz>=2.16
 SQLAlchemy>=2.0
@@ -8,3 +8,4 @@ aiohttp>=3.9
 flask>=2.3
 gunicorn>=21.2
 psycopg2-binary
+playwright-stealth

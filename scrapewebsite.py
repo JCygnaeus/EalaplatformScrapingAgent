@@ -15,7 +15,7 @@ import os
 from random import choice
 import aiohttp
 from decimal import Decimal
-
+from playwright_stealth import stealth_async
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
@@ -215,14 +215,14 @@ async def fetch_rendered_html(url, page, retries=2):
     for attempt in range(retries + 1):
         try:
             # Try to load but don’t wait forever
-            await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+            await page.goto(url, wait_until="networkidle", timeout=60000)
             try:
                 # Accept cookie popups if they appear
-                await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=2000)
+                await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=3000)
             except:
                 pass
             # Give the browser a bit of time to render dynamic content
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
 
             html = await page.content()
             return {"html": html, "error": None}
@@ -234,17 +234,12 @@ async def fetch_rendered_html(url, page, retries=2):
             # Reload a fresh page if stuck
             try:
                 await page.goto("about:blank")
-                try:
-                    # Accept cookie popups if they appear
-                    await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=2000)
-                except:
-                    pass
             except:
                 pass
             await asyncio.sleep(2)
 
 
-async def scrape_focus_fields(start_url,country_name_map, max_pages=1):
+async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
     visited = set()
     to_visit = [start_url]
     parsed_domain = urlparse(start_url).netloc.replace("www.", "")
@@ -259,16 +254,25 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=1):
     ]
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True,
-            args=["--no-sandbox",
+            args=[
+            "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",  # Prevents crashes in low-memory environments
             "--disable-gpu",
             "--single-process",
-            "--no-zygote"
+            "--no-zygote",
+            "--disable-background-timer-throttling",
+            "--disable-renderer-backgrounding",
+            "--disable-backgrounding-occluded-windows",
             ]
         )
-        context = await browser.new_context(user_agent=choice(USER_AGENTS))
+        context = await browser.new_context(
+            user_agent=choice(USER_AGENTS),
+            viewport={"width": 1366, "height": 768},
+            locale="en-US",
+        )
         page = await context.new_page()
+        await stealth_async(page)
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
             url = to_visit.pop(0)
             if url in visited or parsed_domain not in url:
