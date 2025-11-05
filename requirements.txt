@@ -8,4 +8,3 @@ aiohttp>=3.9
 flask>=2.3
 gunicorn>=21.2
 psycopg2-binary
-playwright_stealth
