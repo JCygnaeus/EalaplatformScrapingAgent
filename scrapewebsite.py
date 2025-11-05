@@ -197,7 +197,7 @@ TEXT:
         return {}
 
 
-
+'''
 async def fetch_rendered_html(url, page, retries=2):
     for attempt in range(retries + 1):
         try:
@@ -209,6 +209,38 @@ async def fetch_rendered_html(url, page, retries=2):
             logging.warning(f"Attempt {attempt+1} failed for {url}: {e}")
             if attempt == retries:
                 return {"html": None, "error": str(e)}
+            await asyncio.sleep(2)
+'''
+async def fetch_rendered_html(url, page, retries=2):
+    for attempt in range(retries + 1):
+        try:
+            # Try to load but don’t wait forever
+            await page.goto(url, wait_until="domcontentloaded", timeout=15000)
+            try:
+                # Accept cookie popups if they appear
+                await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=2000)
+            except:
+                pass
+            # Give the browser a bit of time to render dynamic content
+            await asyncio.sleep(2)
+
+            html = await page.content()
+            return {"html": html, "error": None}
+
+        except Exception as e:
+            logging.warning(f"Attempt {attempt + 1} failed for {url}: {e}")
+            if attempt == retries:
+                return {"html": None, "error": str(e)}
+            # Reload a fresh page if stuck
+            try:
+                await page.goto("about:blank")
+                try:
+                    # Accept cookie popups if they appear
+                    await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=2000)
+                except:
+                    pass
+            except:
+                pass
             await asyncio.sleep(2)
 
 
