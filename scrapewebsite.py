@@ -15,7 +15,8 @@ import os
 from random import choice
 import aiohttp
 from decimal import Decimal
-from playwright_stealth import stealth
+from playwright_stealth.stealth_async import stealth_async
+
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
@@ -272,7 +273,7 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
             locale="en-US",
         )
         page = await context.new_page()
-        await stealth(page)
+        await stealth_async(page)
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
             url = to_visit.pop(0)
             if url in visited or parsed_domain not in url:
@@ -546,8 +547,8 @@ os.makedirs(TEMP_FOLDER, exist_ok=True)
 async def download_file(file_url, filename):
     save_path = os.path.join(TEMP_FOLDER, filename)
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(file_url) as resp:
+        async with aiohttp.ClientSession() as dsession:
+            async with dsession.get(file_url) as resp:
                 if resp.status == 200:
                     with open(save_path, 'wb') as f:
                         f.write(await resp.read())
