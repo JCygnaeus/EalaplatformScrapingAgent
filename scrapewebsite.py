@@ -220,7 +220,7 @@ async def fetch_rendered_html(url, page, retries=3):
 
             try:
                 await page.goto(url, wait_until="networkidle", timeout=60000)
-                await asyncio.sleep(3)
+                #await asyncio.sleep(3)
             except PlaywrightTimeoutError:
                 # fallback to domcontentloaded for resiliency
                 await page.goto(url, wait_until="domcontentloaded", timeout=20000)
