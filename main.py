@@ -31,9 +31,7 @@ def scrapingriiyo_main():
 
     try:
         # Use our persistent loop instead of recreating one each request
-        results = loop.run_until_complete(
-            scrape_focus_fields(website, country_name_map, max_pages=7)
-        )
+        results = asyncio.run(scrape_focus_fields(website, country_name_map, max_pages=7))
 
         if not results["structured_data"]:
             return jsonify({
