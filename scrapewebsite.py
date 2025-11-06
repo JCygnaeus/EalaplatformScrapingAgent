@@ -27,13 +27,23 @@ def get_openai_client():
 # openai_api_key = os.getenv("OPENAI_API_KEY")
 # client = OpenAI(api_key=openai_api_key)
 
-DB_EALA_USER = os.getenv('DB_EALA_USER')
-DB_EALA_PASSWORD = os.getenv('DB_EALA_PASSWORD')
-#database_url = "postgresql://"+DB_RIIYO_USER+":"+DB_RIIYO_PASSWORD+"@ep-round-thunder-a4bd4scl.us-east-1.aws.neon.tech/neondb?sslmode=require&options=endpoint%3Dep-round-thunder-a4bd4scl"
-database_url = 'postgresql://'+DB_EALA_USER+':' +DB_EALA_PASSWORD +'@ep-round-thunder-a4bd4scl.us-east-1.aws.neon.tech/neondb?sslmode=require&options=endpoint%3Dep-round-thunder-a4bd4scl'#os.getenv('DATABASE_URL')
+import os
+
+def get_database_url():
+    user = os.getenv("DB_EALA_USER")
+    password = os.getenv("DB_EALA_PASSWORD")
+    if not user or not password:
+        raise RuntimeError("Database credentials missing in environment")
+    return f"postgresql://{user}:{password}@ep-round-thunder-a4bd4scl.us-east-1.aws.neon.tech/neondb?sslmode=require&options=endpoint%3Dep-round-thunder-a4bd4scl"
+
+
+# DB_EALA_USER = os.getenv('DB_EALA_USER')
+# DB_EALA_PASSWORD = os.getenv('DB_EALA_PASSWORD')
+# #database_url = "postgresql://"+DB_RIIYO_USER+":"+DB_RIIYO_PASSWORD+"@ep-round-thunder-a4bd4scl.us-east-1.aws.neon.tech/neondb?sslmode=require&options=endpoint%3Dep-round-thunder-a4bd4scl"
+# database_url = 'postgresql://'+DB_EALA_USER+':' +DB_EALA_PASSWORD +'@ep-round-thunder-a4bd4scl.us-east-1.aws.neon.tech/neondb?sslmode=require&options=endpoint%3Dep-round-thunder-a4bd4scl'#os.getenv('DATABASE_URL')
 
 engine = create_engine(
-    database_url,
+    get_database_url(),
     pool_pre_ping=True,
     pool_size=10,       # Keep 10 connections open
     max_overflow=20,    # Allow 20 extra connections if needed
