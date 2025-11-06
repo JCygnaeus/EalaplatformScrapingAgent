@@ -38,10 +38,10 @@ engine = create_engine(
 )
 Base = declarative_base()
 
-'''
+
 SessionFactory  = sessionmaker(bind=engine)
 session = scoped_session( SessionFactory )
-'''
+
 
 class Retailers(Base):
     __tablename__ = "retailers"
