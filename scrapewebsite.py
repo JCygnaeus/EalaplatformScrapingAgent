@@ -148,8 +148,8 @@ def clean_openai_json(text):
         text = re.sub(r"^```(?:json)?\n?", "", text)
         text = re.sub(r"\n?```$", "", text)
     return text
-
-def extract_structured_fields(text,country_name_map):
+#,country_name_map
+def extract_structured_fields(text):
     type_ids = {
         "Pharmacy": 1, "Salon": 2, "Clinic": 3, "Retailer": 4, "Distributor": 5,
         "Wholesaler": 6, "Spa": 7, "Grocery/Supermarket": 8, "Marketplace": 9
@@ -202,13 +202,13 @@ TEXT:
 
     try:
         structured = json.loads(reply)
-        scraped_countries = structured.get("countries", [])
-        country_ids = []
-        for name in scraped_countries:
-            best_match, score, _ = process.extractOne(name, country_name_map.keys())
-            if score > 80:
-                country_ids.append(country_name_map[best_match])
-        structured["countries"] = country_ids  # Replace names with IDs
+        #scraped_countries = structured.get("countries", [])
+        # country_ids = []
+        # for name in scraped_countries:
+        #     best_match, score, _ = process.extractOne(name, country_name_map.keys())
+        #     if score > 80:
+        #         country_ids.append(country_name_map[best_match])
+        # structured["countries"] = country_ids  # Replace names with IDs
 
         return structured, total_cost
 
@@ -276,8 +276,8 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15"
 ]
-
-async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
+#country_name_map,
+async def scrape_focus_fields(start_url, max_pages=5):
     visited = set()
     to_visit = [start_url]
     parsed_domain = urlparse(start_url).netloc.replace("www.", "")
@@ -335,7 +335,8 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
                 continue
 
             text = BeautifulSoup(html, "html.parser").get_text()
-            data, cost = extract_structured_fields(text, country_name_map)
+            #data, cost = extract_structured_fields(text, country_name_map)
+            data, cost = extract_structured_fields(text)
             total_cost += cost
 
             if any(data.values()) and not found_on:

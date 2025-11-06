@@ -12,10 +12,11 @@ app = Flask(__name__)
 def home():
     return "✅ Flask + Playwright isrunning!"
 
-@lru_cache(maxsize=1)
-def get_country_name_map():
-    all_countries = Riiyosession.query(Countries).all()
-    return {c.country_name_english: c.id for c in all_countries}
+# @lru_cache(maxsize=1)
+# def get_country_name_map():
+#     all_countries = Riiyosession.query(Countries).all()
+#     return {c.country_name_english: c.id for c in all_countries}
+
 
 
 @app.route("/scrapingriiyo")
@@ -24,12 +25,12 @@ def scrapingriiyo_main():
     if not website or not website.startswith("http"):
         return jsonify({"error": "Invalid or missing website URL"}), 400
 
-    country_name_map = get_country_name_map()
+    #country_name_map = get_country_name_map()
 
     try:
         # Use our persistent loop instead of recreating one each request
-        results = asyncio.run(scrape_focus_fields(website, country_name_map, max_pages=7))
-
+        #results = asyncio.run(scrape_focus_fields(website, country_name_map, max_pages=7))
+        results = asyncio.run(scrape_focus_fields(website,  max_pages=7))
         if not results["structured_data"]:
             return jsonify({
                 "error": "Failed to extract structured data",
