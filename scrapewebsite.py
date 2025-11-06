@@ -12,6 +12,7 @@ from sqlalchemy import create_engine, literal,Integer , Numeric, Column, String,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session
 import os
+import random
 from random import choice
 import aiohttp
 from decimal import Decimal
@@ -218,7 +219,8 @@ async def fetch_rendered_html(url, page, retries=3):
             # Try to load but don’t wait forever
 
             try:
-                await page.goto(url, wait_until="networkidle", timeout=45000)
+                await page.goto(url, wait_until="networkidle", timeout=60000)
+                await asyncio.sleep(3)
             except PlaywrightTimeoutError:
                 # fallback to domcontentloaded for resiliency
                 await page.goto(url, wait_until="domcontentloaded", timeout=20000)
