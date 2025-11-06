@@ -1,7 +1,7 @@
 # ===============================
-# Base image: full Ubuntu 22.04
+# Official Playwright image with browsers preinstalled
 # ===============================
-FROM ubuntu:22.04
+FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
 
 # ===============================
 # Set working directory
@@ -9,60 +9,30 @@ FROM ubuntu:22.04
 WORKDIR /app
 
 # ===============================
-# Install system dependencies for:
-# - Python
-# - Playwright / Chromium
-# - PostgreSQL client
-# - General utilities
-# ===============================
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python3 python3-pip python3-venv curl wget gnupg \
-        libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-        libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
-        libxrandr2 libgbm1 libpango-1.0-0 libasound2 \
-        libglib2.0-0 libgobject-2.0-0 libnspr4 libnssutil3 libsmime3 \
-        libgio2.0-0 libdbus-1-3 libexpat1 libxkbcommon0 libatspi2.0-0 \
-        fonts-liberation fonts-dejavu libcurl4 \
-        postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
-
-# ===============================
-# Upgrade pip
-# ===============================
-RUN python3 -m pip install --upgrade pip
-
-# ===============================
-# Copy and install Python dependencies
+# Copy Python requirements and install
 # ===============================
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ===============================
-# Copy application code
+# Copy app code
 # ===============================
 COPY . .
 
 # ===============================
-# Install Playwright browsers with dependencies
-# ===============================
-RUN python3 -m playwright install --with-deps
-
-# ===============================
-# Expose port (Railway default)
+# Expose port
 # ===============================
 EXPOSE 8080
 
 # ===============================
-# Set environment variables for Flask/Playwright
-# These can also be set in Railway service variables
+# Disable Playwright host checks in Docker
 # ===============================
-ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_DRIVER_USE_SANDBOX=0
 
 # ===============================
-# Run Flask app via Gunicorn (production-ready)
-# - Single worker to avoid Playwright browser conflicts
-# - Increased timeout for scraping
+# Run Flask app with Gunicorn
+# Single worker recommended for Playwright
 # ===============================
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers=1", "--threads=2", "--timeout=300", "main:app"]
