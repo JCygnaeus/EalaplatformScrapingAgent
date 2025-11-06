@@ -16,7 +16,7 @@ from random import choice
 import aiohttp
 from decimal import Decimal
 from playwright_stealth.stealth_async import stealth_async
-#kk
+
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
@@ -153,7 +153,7 @@ You are a data extraction AI. From the following text, extract:
 - Business types (choose from: {type_map})
 - Product categories (choose from: {category_map})
 
-Return as raw JSON with these keys:"company_name", "email_address", "phone_number", "countries", "types", "categories".
+Return as raw JSON with keys:"company_name", "email_address", "phone_number", "countries", "types", "categories".
 If you can't find a field, return an empty string or array.
 TEXT:
 {text}
@@ -212,33 +212,50 @@ async def fetch_rendered_html(url, page, retries=2):
                 return {"html": None, "error": str(e)}
             await asyncio.sleep(2)
 '''
-async def fetch_rendered_html(url, page, retries=2):
-    for attempt in range(retries + 1):
+async def fetch_rendered_html(url, page, retries=3):
+    for attempt in range(retries):
         try:
             # Try to load but don’t wait forever
-            await page.goto(url, wait_until="networkidle", timeout=60000)
+
             try:
-                # Accept cookie popups if they appear
-                await page.locator("button:has-text('Acceptera'), button:has-text('Accept'), button:has-text('Godkänn')").click(timeout=3000)
+                await page.goto(url, wait_until="networkidle", timeout=45000)
+            except PlaywrightTimeoutError:
+                # fallback to domcontentloaded for resiliency
+                await page.goto(url, wait_until="domcontentloaded", timeout=20000)
+
+            try:
+                await page.locator("button:has-text('Accept'), button:has-text('Acceptera'), button:has-text('Godkänn'), button:has-text('OK')").click(timeout=3000)
             except:
                 pass
+
             # Give the browser a bit of time to render dynamic content
-            await asyncio.sleep(3)
+            await asyncio.sleep(random.uniform(1.0, 3.0))
 
             html = await page.content()
-            return {"html": html, "error": None}
+            if html and html.strip():
+                return {"html": html, "error": None}
+            else:
+                raise ValueError("Empty HTML content")
+
 
         except Exception as e:
             logging.warning(f"Attempt {attempt + 1} failed for {url}: {e}")
-            if attempt == retries:
+            if attempt == retries-1:
                 return {"html": None, "error": str(e)}
             # Reload a fresh page if stuck
             try:
-                await page.goto("about:blank")
+                await page.goto("about:blank", timeout=5000)
             except:
                 pass
             await asyncio.sleep(2)
+    return {"html": None, "error": "Unknown error"}
 
+    
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15"
+]
 
 async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
     visited = set()
@@ -248,11 +265,7 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
     found_on = None
     errors = []
     total_cost=0
-    USER_AGENTS = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15"
-    ]
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True,
             args=[
@@ -273,19 +286,28 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
             locale="en-US",
         )
         page = await context.new_page()
-        await stealth_async(page)
+        await page.add_init_script(
+            """
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            Object.defineProperty(navigator, 'languages', {get: () => ['en-US','en']});
+            Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+            window.chrome = { runtime: {} };
+            """
+        )
         while to_visit and len(visited) < max_pages and not is_done(merged_data):
             url = to_visit.pop(0)
             if url in visited or parsed_domain not in url:
                 continue
 
+            logging.info(f"Scraping {url} (to_visit size {len(to_visit)})")
             result = await fetch_rendered_html(url, page)
             html, error = result["html"], result["error"]
             if error:
                 errors.append({"url": url, "error": error})
-                if "403" in error or "blocked" in error.lower() or "denied" in error.lower():
-                    logging.warning(f"❌ Access denied or blocked on domain: {parsed_domain}. Stopping further scraping.")
-                    break  # stop scraping early
+                logging.warning(f"Error fetching {url}: {error}")
+                if any(x in error.lower() for x in ["403", "blocked", "denied", "captcha"]):
+                    logging.warning(f"Access blocked for {parsed_domain}; stopping.")
+                    break
                 continue
 
             if not html or not isinstance(html, str):
@@ -311,9 +333,12 @@ async def scrape_focus_fields(start_url,country_name_map, max_pages=5):
                 if parsed_domain in link and link not in visited and link not in to_visit:
                     to_visit.append(link)
 
-            await asyncio.sleep(0.8)
+            await asyncio.sleep(random.uniform(0.8, 1.6))
 
-        await browser.close()
+        try:
+            await browser.close()
+        except:
+            pass
 
     return {
         "source_url": found_on or start_url,

@@ -17,11 +17,45 @@ def get_country_name_map():
     all_countries = Riiyosession.query(Countries).all()
     return {c.country_name_english: c.id for c in all_countries}
 
+# Create a global event loop that lives as long as Flask runs
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 @app.route("/scrapingriiyo")
 def scrapingriiyo_main():
     website = request.args.get("website")
     if not website or not website.startswith("http"):
         return jsonify({"error": "Invalid or missing website URL"}), 400
+
+    country_name_map = get_country_name_map()
+
+    try:
+        # Use our persistent loop instead of recreating one each request
+        results = loop.run_until_complete(
+            scrape_focus_fields(website, country_name_map, max_pages=7)
+        )
+
+        if not results["structured_data"]:
+            return jsonify({
+                "error": "Failed to extract structured data",
+                "details": results.get("errors", []),
+                "source_url": results.get("source_url")
+            }), 500
+
+        return jsonify(results)
+
+    except Exception as e:
+        return jsonify({"error": f"Scraping failed: {str(e)}"}), 500
+
+
+
+'''
+@app.route("/scrapingriiyo")
+def scrapingriiyo_main():
+    website = request.args.get("website")
+    if not website or not website.startswith("http"):
+        return jsonify({"error": "Invalid or missing website URL"}), 400
+
     country_name_map = get_country_name_map()
     results = asyncio.run(scrape_focus_fields(website, country_name_map, max_pages=7))
     if not results["structured_data"]:
@@ -32,7 +66,7 @@ def scrapingriiyo_main():
         }), 500
 
     return jsonify(results)
-
+'''
 @app.route('/scrapingriiyo2')
 def scrapingriiyo2():
     website = request.args.get("website")
