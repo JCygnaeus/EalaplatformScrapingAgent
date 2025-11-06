@@ -15,7 +15,7 @@ import os
 from random import choice
 import aiohttp
 from decimal import Decimal
-from playwright_stealth.stealth_async import stealth_async
+#from playwright_stealth.stealth_async import stealth_async
 
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -250,7 +250,7 @@ async def fetch_rendered_html(url, page, retries=3):
             await asyncio.sleep(2)
     return {"html": None, "error": "Unknown error"}
 
-    
+
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:117.0) Gecko/20100101 Firefox/117.0",
