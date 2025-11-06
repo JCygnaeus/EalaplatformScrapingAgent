@@ -18,9 +18,14 @@ import aiohttp
 from decimal import Decimal
 #from playwright_stealth.stealth_async import stealth_async
 
+def get_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+    return OpenAI(api_key=api_key)
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=openai_api_key)
+# openai_api_key = os.getenv("OPENAI_API_KEY")
+# client = OpenAI(api_key=openai_api_key)
 
 DB_EALA_USER = os.getenv('DB_EALA_USER')
 DB_EALA_PASSWORD = os.getenv('DB_EALA_PASSWORD')
@@ -162,6 +167,7 @@ TEXT:
 {text}
 """
     try:
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
