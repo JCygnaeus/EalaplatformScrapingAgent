@@ -1,52 +1,63 @@
-# ===============================
-# Production-ready Playwright + Flask
-# ===============================
+# ==========================
+# Production-ready Flask + Playwright
+# ==========================
 
-# Use official Python + Playwright image (browsers preinstalled)
-FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
+# Use official Python 3.11 slim as base
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
 # -------------------------------
-# Install system dependencies for Chromium/Playwright
+# Install system dependencies required for Chromium/Playwright
 # -------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
-    libgobject-2.0-0 \
-    libnspr4 \
-    libnss3 \
-    libnssutil3 \
-    libsmime3 \
-    libgio-2.0-0 \
-    libdbus-1-3 \
+    curl \
+    gnupg \
+    ca-certificates \
+    fonts-liberation \
+    libasound2 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
+    libdbus-1-3 \
     libexpat1 \
-    libxcb1 \
-    libxkbcommon0 \
-    libatspi2.0-0 \
+    libgbm1 \
+    libglib2.0-0 \
+    libgobject-2.0-0 \
+    libnss3 \
+    libnspr4 \
+    libnssutil3 \
+    libsmime3 \
     libx11-6 \
     libxcomposite1 \
     libxdamage1 \
     libxext6 \
     libxfixes3 \
     libxrandr2 \
-    libgbm1 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
     libcairo2 \
     libpango-1.0-0 \
-    libasound2 \
+    libgio-2.0-0 \
+    libdbus-1-3 \
+    wget \
+    unzip \
+    git \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Optional: ensure Playwright uses a fixed browser path (avoids caching issues)
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-
 # -------------------------------
-# Copy and install Python dependencies
+# Install Python dependencies
 # -------------------------------
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# -------------------------------
+# Install Playwright browsers
+# -------------------------------
+RUN pip install --no-cache-dir playwright && \
+    playwright install --with-deps chromium
 
 # -------------------------------
 # Copy application code
@@ -59,7 +70,6 @@ COPY . .
 EXPOSE 8080
 
 # -------------------------------
-# Run Flask with Gunicorn (WSGI)
-# Single worker recommended for heavy Playwright scraping
+# Run Flask with Gunicorn (single worker recommended)
 # -------------------------------
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers=1", "--threads=2", "--timeout=300", "main:app"]
