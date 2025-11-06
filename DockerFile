@@ -1,17 +1,21 @@
-# Use official Playwright image (browsers + libs preinstalled)
+# Use official Playwright image (browsers + deps preinstalled)
 FROM mcr.microsoft.com/playwright/python:v1.55.0-jammy
 
+# Set working directory
 WORKDIR /app
 
-# Copy requirements and install
+# Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Expose Railway / container port
+# Expose Railway port
 EXPOSE 8080
 
-# Run FastAPI via gunicorn + uvicorn worker (async)
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8080", "--workers=1", "--threads=2", "--timeout=300", "main:app"]
+# Run Flask app using Gunicorn (WSGI)
+# - No uvicorn worker (Flask is not ASGI)
+# - Increased timeout for Playwright scraping
+# - Single worker is safer since Playwright uses heavy browser processes
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers=1", "--threads=2", "--timeout=300", "main:app"]
