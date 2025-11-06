@@ -17,9 +17,6 @@ def get_country_name_map():
     all_countries = Riiyosession.query(Countries).all()
     return {c.country_name_english: c.id for c in all_countries}
 
-# Create a global event loop that lives as long as Flask runs
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
 
 @app.route("/scrapingriiyo")
 def scrapingriiyo_main():

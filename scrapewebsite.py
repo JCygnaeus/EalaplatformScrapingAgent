@@ -38,8 +38,10 @@ engine = create_engine(
 )
 Base = declarative_base()
 
+'''
 SessionFactory  = sessionmaker(bind=engine)
 session = scoped_session( SessionFactory )
+'''
 
 class Retailers(Base):
     __tablename__ = "retailers"
@@ -666,6 +668,7 @@ async def update_database(website, retailer_id):
 
 
     logging.info(f"brand_count : {brand_count}")
+    '''
     try:
         session.query(Retailers).filter(Retailers.id ==retailer_id
                     ).update(
@@ -683,6 +686,7 @@ async def update_database(website, retailer_id):
     except Exception as e:
         session.rollback()
         logging.error(f"Commit failed: {e}")
+    '''
     return results
 
 
